@@ -4,71 +4,110 @@
   <meta charset="UTF-8">
   <title>HTML5 Canvas</title>
   <link rel="icon" href="https://fav.farm/✅" />
+  <style>
+    #clearButton {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      background-color: #f44336;
+      color: #fff;
+      border: none;
+      padding: 12px 24px;
+      font-size: 16px;
+      border-radius: 4px;
+      cursor: pointer;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    }
+    #clearButton:hover {
+      background-color: #d32f2f;
+    }
+  </style>
 </head>
 <body>
-<canvas id="draw" width="800" height="800"></canvas>
-<script>
-const canvas = document.querySelector('#draw');
-const ctx = canvas.getContext('2d');
-canvas.width = window.innerWidth;
-canvas.height = window.innerHeight;
-ctx.strokeStyle = '#BADA55';
-ctx.lineJoin = 'round';
-ctx.lineCap = 'round';
-ctx.lineWidth = 100;
-// ctx.globalCompositeOperation = 'multiply';
+  <canvas id="draw" width="800" height="800"></canvas>
+  <button id="clearButton">Clear Drawing</button>
+  <script>
+    const canvas = document.querySelector('#draw');
+    const ctx = canvas.getContext('2d');
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    ctx.strokeStyle = '#BADA55';
+    ctx.lineJoin = 'round';
+    ctx.lineCap = 'round';
+    ctx.lineWidth = 10;
 
-let isDrawing = false;
-let lastX = 0;
-let lastY = 0;
-let hue = 0;
-let direction = true;
+    let isDrawing = false;
+    let lastX = 0;
+    let lastY = 0;
+    let hue = 0;
+    let direction = true;
 
-function draw(e) {
-  if (!isDrawing) return; // stop the fn from running when they are not moused down
-  console.log(e);
-  ctx.strokeStyle = `hsl(${hue}, 100%, 50%)`;
-  ctx.beginPath();
-  // start from
-  ctx.moveTo(lastX, lastY);
-  // go to
-  ctx.lineTo(e.offsetX, e.offsetY);
-  ctx.stroke();
-  [lastX, lastY] = [e.offsetX, e.offsetY];
+    function draw(e) {
+      if (!isDrawing) return;
+      ctx.strokeStyle = `hsl(${hue}, 100%, 50%)`;
+      ctx.beginPath();
+      // Smooth the drawing with a quadratic curve
+      ctx.moveTo(lastX, lastY);
+      ctx.quadraticCurveTo(lastX, lastY, e.offsetX, e.offsetY);
+      ctx.stroke();
+      [lastX, lastY] = [e.offsetX, e.offsetY];
 
-  hue++;
-  if (hue >= 360) {
-    hue = 0;
-  }
-  if (ctx.lineWidth >= 100 || ctx.lineWidth <= 1) {
-    direction = !direction;
-  }
+      hue = (hue + 1) % 360;
+      ctx.lineWidth = (direction) ? (ctx.lineWidth + 1) : (ctx.lineWidth - 1);
 
-  if(direction) {
-    ctx.lineWidth++;
-  } else {
-    ctx.lineWidth--;
-  }
+      if (ctx.lineWidth >= 100 || ctx.lineWidth <= 1) {
+        direction = !direction;
+      }
 
-}
+      saveDrawing();
+    }
 
-canvas.addEventListener('mousedown', (e) => {
-  isDrawing = true;
-  [lastX, lastY] = [e.offsetX, e.offsetY];
-});
+    function throttle(callback, delay) {
+      let previousCall = new Date().getTime();
+      return function() {
+        const time = new Date().getTime();
 
+        if ((time - previousCall) >= delay) {
+          previousCall = time;
+          callback.apply(null, arguments);
+        }
+      };
+    }
 
-canvas.addEventListener('mousemove', draw);
-canvas.addEventListener('mouseup', () => isDrawing = false);
-canvas.addEventListener('mouseout', () => isDrawing = false);
+    canvas.addEventListener('mousedown', (e) => {
+      isDrawing = true;
+      [lastX, lastY] = [e.offsetX, e.offsetY];
+    });
 
-</script>
+    const throttledDraw = throttle(draw, 10);
+    canvas.addEventListener('mousemove', throttledDraw);
+    canvas.addEventListener('mouseup', () => isDrawing = false);
+    canvas.addEventListener('mouseout', () => isDrawing = false);
 
-<style>
-  html, body {
-    margin: 0;
-  }
-</style>
+    function saveDrawing() {
+      const drawingData = canvas.toDataURL();
+      localStorage.setItem('savedDrawing', drawingData);
+    }
 
+    function deleteDrawing() {
+      localStorage.removeItem('savedDrawing');
+      clearCanvas();
+    }
+
+    function clearCanvas() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+    }
+
+    const savedDrawingData = localStorage.getItem('savedDrawing');
+    if (savedDrawingData) {
+      const img = new Image();
+      img.src = savedDrawingData;
+      img.onload = () => {
+        ctx.drawImage(img, 0, 0);
+      };
+    }
+
+    document.getElementById('clearButton').addEventListener('click', deleteDrawing);
+  </script>
 </body>
 </html>
