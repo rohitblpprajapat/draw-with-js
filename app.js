@@ -33,25 +33,25 @@ const canvas = document.querySelector('#draw');
       saveDrawing();
     }
 
-    function throttle(callback, delay) {
-      let previousCall = new Date().getTime();
-      return function() {
-        const time = new Date().getTime();
+    // function throttle(callback, delay) {
+    //   let previousCall = new Date().getTime();
+    //   return function() {
+    //     const time = new Date().getTime();
 
-        if ((time - previousCall) >= delay) {
-          previousCall = time;
-          callback.apply(null, arguments);
-        }
-      };
-    }
+    //     if ((time - previousCall) >= delay) {
+    //       previousCall = time;
+    //       callback.apply(null, arguments);
+    //     }
+    //   };
+    // }
 
     canvas.addEventListener('mousedown', (e) => {
       isDrawing = true;
       [lastX, lastY] = [e.offsetX, e.offsetY];
     });
 
-    const throttledDraw = throttle(draw, 10);
-    canvas.addEventListener('mousemove', throttledDraw);
+    // const throttledDraw = throttle(draw, 1);
+    canvas.addEventListener('mousemove', draw);
     canvas.addEventListener('mouseup', () => isDrawing = false);
     canvas.addEventListener('mouseout', () => isDrawing = false);
 
